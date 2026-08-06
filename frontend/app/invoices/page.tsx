@@ -236,7 +236,7 @@ function PaymentModal({
 
   useEffect(() => {
     if (isOpen) {
-      setAmount(invoice ? String(invoice.balance) : '');
+      setAmount(invoice ? String(invoice.total - invoice.amountPaid) : '');
       setMethod('bank_transfer');
       setReference('');
       setNotes('');
@@ -318,7 +318,7 @@ function InvoiceDetailModal({
     { label: 'Status', value: invoice.status.replace('_', ' ') },
     { label: 'Total', value: fmtMoney(invoice.total, invoice.currency) },
     { label: 'Amount Paid', value: fmtMoney(invoice.amountPaid, invoice.currency) },
-    { label: 'Balance', value: fmtMoney(invoice.balance, invoice.currency) },
+    { label: 'Balance', value: fmtMoney(invoice.total - invoice.amountPaid, invoice.currency) },
   ];
 
   return (
@@ -506,7 +506,7 @@ export default function InvoicesPage() {
                       <Badge variant={STATUS_VARIANT[invoice.status]} size="sm">{invoice.status.replace('_', ' ')}</Badge>
                       <span className="text-sm font-semibold text-foreground">{fmtMoney(invoice.total, invoice.currency)}</span>
                       <span className="text-xs text-muted-foreground">
-                        Paid {fmtMoney(invoice.amountPaid, invoice.currency)} • Balance {fmtMoney(invoice.balance, invoice.currency)}
+                        Paid {fmtMoney(invoice.amountPaid, invoice.currency)} • Balance {fmtMoney(invoice.total - invoice.amountPaid, invoice.currency)}
                       </span>
                     </div>
                   </div>

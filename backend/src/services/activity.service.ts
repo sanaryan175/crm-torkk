@@ -2,6 +2,7 @@ import prisma from '../config/db';
 import { NotFoundError } from '../utils/errors';
 import { ActivityType } from '@prisma/client';
 import { EmailService } from './email.service';
+import { NotificationHelper } from '../utils/notification.helper';
 
 const ACTIVITY_INCLUDE = {
   contact:    { select: { id: true, firstName: true, lastName: true, company: true } },
@@ -118,7 +119,20 @@ export class ActivityService {
       where: { id: createdById, organizationId },
       select: { name: true },
     });
+    
+    // Send email and create app notification
     this.notifyAssigned(organizationId, createdActivity, data.assignedToId, creator?.name || 'Someone').catch(() => {});
+    
+    // Create app notification
+    if (data.assignedToId) {
+      NotificationHelper.notifyActivityAssigned(
+        organizationId,
+        data.assignedToId,
+        createdActivity.id,
+        createdActivity.subject,
+        createdActivity.type
+      ).catch(() => {});
+    }
 
     return createdActivity;
   }
@@ -149,6 +163,15 @@ export class ActivityService {
         select: { name: true },
       });
       this.notifyAssigned(organizationId, updatedActivity, data.assignedToId, actor?.name || 'Someone').catch(() => {});
+      
+      // Create app notification for reassignment
+      NotificationHelper.notifyActivityAssigned(
+        organizationId,
+        data.assignedToId,
+        updatedActivity.id,
+        updatedActivity.subject,
+        updatedActivity.type
+      ).catch(() => {});
     }
 
     return updatedActivity;

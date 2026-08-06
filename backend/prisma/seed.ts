@@ -13,6 +13,7 @@ async function main() {
   await prisma.deal.deleteMany();
   await prisma.contact.deleteMany();
   await prisma.invitation.deleteMany();
+  await prisma.chatMessage.deleteMany();     // delete before users
   await prisma.user.deleteMany();           // users before roles
   await prisma.rolePermission.deleteMany();
   await prisma.permission.deleteMany();

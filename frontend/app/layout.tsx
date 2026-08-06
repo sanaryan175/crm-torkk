@@ -21,8 +21,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  colorScheme: 'dark',
+  colorScheme: 'light dark',
   themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#1c1c1c' },
   ],
 }
@@ -33,30 +34,22 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/*
-          Inline script runs BEFORE React hydrates — reads pref_theme from
-          localStorage and applies the dark class immediately, preventing a
-          white flash on dark-mode users.
+          Inline script runs BEFORE React hydrates — reads theme from
+          localStorage and applies the dark class immediately, preventing flash.
         */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function(){
                 try {
-                  var t = localStorage.getItem('pref_theme');
-                  if (t === 'light') {
-                    document.documentElement.classList.remove('dark');
-                  } else if (t === 'dark' || !t) {
+                  var t = localStorage.getItem('theme') || 'light';
+                  if (t === 'dark') {
                     document.documentElement.classList.add('dark');
                   } else {
-                    // system
-                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                      document.documentElement.classList.add('dark');
-                    } else {
-                      document.documentElement.classList.remove('dark');
-                    }
+                    document.documentElement.classList.remove('dark');
                   }
                 } catch(e){}
               })();

@@ -21,10 +21,10 @@ router.put('/scheduled-jobs/:id',    requirePermission('workflow.update'), valid
 router.delete('/scheduled-jobs/:id', requirePermission('workflow.delete'), WorkflowController.deleteScheduledJob);
 
 // Business rules
-router.get('/business-rules',        requirePermission('workflow.read'),   WorkflowController.getBusinessRules);
-router.post('/business-rules',       requirePermission('workflow.create'), validate(createBusinessRuleSchema), WorkflowController.createBusinessRule);
-router.get('/business-rules/:id',    requirePermission('workflow.read'),   WorkflowController.getBusinessRuleById);
-router.put('/business-rules/:id',    requirePermission('workflow.update'), validate(updateBusinessRuleSchema), WorkflowController.updateBusinessRule);
-router.delete('/business-rules/:id', requirePermission('workflow.delete'), WorkflowController.deleteBusinessRule);
+router.get('/rules',        requirePermission('workflow.read'),   WorkflowController.getBusinessRules);
+router.post('/rules',       requirePermission('workflow.create'), validate(createBusinessRuleSchema), WorkflowController.createBusinessRule);
+router.get('/rules/:id',    requirePermission('workflow.read'),   WorkflowController.getBusinessRuleById);
+router.put('/rules/:id',    requirePermission('workflow.update'), validate(updateBusinessRuleSchema), WorkflowController.updateBusinessRule);
+router.delete('/rules/:id', requirePermission('workflow.delete'), WorkflowController.deleteBusinessRule);
 
 export default router;

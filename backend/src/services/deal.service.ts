@@ -2,6 +2,7 @@ import prisma from '../config/db';
 import { NotFoundError } from '../utils/errors';
 import { DealStage, DealPriority, DealCloseReason } from '@prisma/client';
 import { EmailService } from './email.service';
+import { NotificationHelper } from '../utils/notification.helper';
 
 const DEAL_INCLUDE = {
   contact:    { select: { id: true, firstName: true, lastName: true, company: true, email: true } },
@@ -148,6 +149,17 @@ export class DealService {
       createdDeal.value, baseCurrency,
       data.assignedToId, creator?.name || 'Someone'
     ).catch(() => {});
+    
+    // Create app notification
+    if (data.assignedToId) {
+      NotificationHelper.notifyDealAssigned(
+        organizationId,
+        data.assignedToId,
+        createdDeal.id,
+        createdDeal.title,
+        createdDeal.value
+      ).catch(() => {});
+    }
 
     return createdDeal;
   }
@@ -194,6 +206,27 @@ export class DealService {
         organizationId, updatedDeal.title,
         updatedDeal.value, org?.currency || 'USD',
         data.assignedToId, actor?.name || 'Someone'
+      ).catch(() => {});
+      
+      // Create app notification for reassignment
+      NotificationHelper.notifyDealAssigned(
+        organizationId,
+        data.assignedToId,
+        updatedDeal.id,
+        updatedDeal.title,
+        updatedDeal.value
+      ).catch(() => {});
+    }
+    
+    // Notify if stage changed
+    if (data.stage && data.stage !== existing.stage && updatedDeal.assignedToId) {
+      NotificationHelper.notifyDealStageChanged(
+        organizationId,
+        updatedDeal.assignedToId,
+        updatedDeal.id,
+        updatedDeal.title,
+        existing.stage,
+        data.stage
       ).catch(() => {});
     }
 

@@ -3,6 +3,7 @@ import prisma from '../config/db';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
 import { ApprovalStatus } from '@prisma/client';
 import { AuditService } from './audit.service';
+import { NotificationHelper } from '../utils/notification.helper';
 
 interface ApprovalFlowData {
   name?: string;
@@ -162,6 +163,35 @@ export class ApprovalService {
       organizationId, requestedById, 'approval_request', request.id,
       data.data ?? { title: data.title }, req
     );
+    
+    // Notify approvers if flow has defined approvers
+    if (data.flowId) {
+      const flow = await prisma.approvalFlow.findFirst({
+        where: { id: data.flowId, organizationId },
+      });
+      if (flow && Array.isArray(flow.steps) && flow.steps.length > 0) {
+        const step = (flow.steps as any[])[0];
+        const approverIds: string[] = [];
+        if (step.approverId) approverIds.push(step.approverId);
+        if (step.userId) approverIds.push(step.userId);
+        if (Array.isArray(step.approvers)) approverIds.push(...step.approvers);
+        
+        if (approverIds.length > 0) {
+          NotificationHelper.createMultiple(
+            organizationId,
+            [...new Set(approverIds)], // Remove duplicates
+            {
+              title: 'Approval Needed',
+              body: data.title!,
+              type: 'approval',
+              relatedModel: 'ApprovalRequest',
+              relatedId: request.id,
+            }
+          ).catch(() => {});
+        }
+      }
+    }
+    
     return this.getApprovalRequestById(request.id, organizationId);
   }
 
@@ -195,6 +225,23 @@ export class ApprovalService {
       organizationId, actorId, 'approval_request', id,
       { decision: data.decision, comment: data.comment }, req
     );
+    
+    // Notify requester of decision
+    const approver = await prisma.user.findFirst({
+      where: { id: actorId, organizationId },
+      select: { name: true },
+    });
+    const decisionText = data.decision === ApprovalStatus.approved ? 'Approved' : 'Rejected';
+    NotificationHelper.create({
+      organizationId,
+      userId: request.requestedById,
+      title: `Approval ${decisionText}`,
+      body: `${approver?.name || 'Approver'} ${decisionText.toLowerCase()} your request`,
+      type: 'approval',
+      relatedModel: 'ApprovalRequest',
+      relatedId: updated.id,
+    }).catch(() => {});
+    
     return this.withFlow(updated);
   }
 }

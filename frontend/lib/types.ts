@@ -820,6 +820,7 @@ export interface OfferLetter {
 export interface PerformanceReview {
   id: string;
   employeeId: string;
+  reviewerId?: string | null;
   reviewer?: UserRef | null;
   periodStart?: Date | string | null;
   periodEnd?: Date | string | null;

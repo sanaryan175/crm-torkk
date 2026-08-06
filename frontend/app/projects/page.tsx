@@ -92,14 +92,13 @@ function ProjectModal({
     setIsSubmitting(true);
     try {
       await onSave({
-        name: form.name,
-        code: form.code.trim() || undefined,
-        description: form.description || undefined,
-        status: form.status,
-        startDate: form.startDate || undefined,
-        endDate: form.endDate || undefined,
-        budget: form.budget ? Number(form.budget) : undefined,
-        managerId: form.managerId || undefined,
+         name: form.name,
+         code: form.code.trim() || undefined,
+         description: form.description || undefined,
+         status: form.status,
+         startDate: form.startDate || undefined,
+         endDate: form.endDate || undefined,
+         budget: form.budget ? Number(form.budget) : undefined,
       });
       onClose();
     } catch (err: any) {

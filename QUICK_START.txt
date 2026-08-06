@@ -1,0 +1,120 @@
+═══════════════════════════════════════════════════════════════════
+  TORKK CRM - QUICK START GUIDE (5 MINUTES TO RUNNING)
+═══════════════════════════════════════════════════════════════════
+
+PREREQUISITES:
+  ✓ Node.js v18+ installed
+  ✓ PostgreSQL installed and running
+  ✓ Torkk CRM folder downloaded
+
+═══════════════════════════════════════════════════════════════════
+STEP 1: DATABASE (1 minute)
+═══════════════════════════════════════════════════════════════════
+
+Open PowerShell and run:
+
+psql -U postgres
+CREATE DATABASE torkk_crm;
+\q
+
+═══════════════════════════════════════════════════════════════════
+STEP 2: BACKEND SETUP (2 minutes) - TERMINAL 1
+═══════════════════════════════════════════════════════════════════
+
+cd E:\Downloads\crm01-torkk\crm-manager\backend
+
+npm install
+
+Create file: .env
+───────────────────────────────────────────────────────────────────
+DATABASE_URL=postgresql://postgres:password@localhost:5432/torkk_crm
+NODE_ENV=development
+PORT=3000
+JWT_SECRET=supersecretkey_min32characterslongjustputanythinghere
+CORS_ORIGIN=http://localhost:3001
+───────────────────────────────────────────────────────────────────
+
+npm run prisma:generate
+npm run prisma:migrate
+
+npm run dev
+
+WAIT FOR: "Server running on http://localhost:3000"
+
+═══════════════════════════════════════════════════════════════════
+STEP 3: FRONTEND SETUP (2 minutes) - TERMINAL 2 (NEW WINDOW!)
+═══════════════════════════════════════════════════════════════════
+
+cd E:\Downloads\crm01-torkk\crm-manager\frontend
+
+npm install
+
+Create file: .env.local
+───────────────────────────────────────────────────────────────────
+NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=Torkk
+───────────────────────────────────────────────────────────────────
+
+npm run dev
+
+WAIT FOR: "Ready in X.Xs at http://localhost:3001"
+
+═══════════════════════════════════════════════════════════════════
+STEP 4: OPEN BROWSER
+═══════════════════════════════════════════════════════════════════
+
+Go to: http://localhost:3001
+
+YOU'RE DONE! 🎉
+
+═══════════════════════════════════════════════════════════════════
+WHAT'S RUNNING
+═══════════════════════════════════════════════════════════════════
+
+Backend API:    http://localhost:3000
+Frontend Web:   http://localhost:3001
+Database:       PostgreSQL (port 5432)
+
+═══════════════════════════════════════════════════════════════════
+COMMON ISSUES
+═══════════════════════════════════════════════════════════════════
+
+Port 3000 in use?
+  netstat -ano | findstr :3000
+  taskkill /PID <number> /F
+
+Port 3001 in use?
+  netstat -ano | findstr :3001
+  taskkill /PID <number> /F
+
+Database connection error?
+  - Check DATABASE_URL in .env
+  - Verify PostgreSQL is running
+  - Run: psql -U postgres -c "SELECT 1;"
+
+Frontend won't connect to API?
+  - Check NEXT_PUBLIC_API_URL=http://localhost:3000
+  - Verify backend is running
+  - Check browser console (F12)
+
+═══════════════════════════════════════════════════════════════════
+STOP SERVERS
+═══════════════════════════════════════════════════════════════════
+
+Press Ctrl+C in each terminal window
+
+═══════════════════════════════════════════════════════════════════
+IMPORTANT: TWO TERMINALS NEEDED
+═══════════════════════════════════════════════════════════════════
+
+Terminal 1: Backend running
+Terminal 2: Frontend running
+(Both must stay open while developing)
+
+═══════════════════════════════════════════════════════════════════
+FULL DOCUMENTATION
+═══════════════════════════════════════════════════════════════════
+
+See: LOCAL_DEVELOPMENT_SETUP.md
+
+═══════════════════════════════════════════════════════════════════

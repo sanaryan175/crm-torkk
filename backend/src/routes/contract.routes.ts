@@ -8,11 +8,11 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/contracts',       requirePermission('contract.read'),   ContractController.getContracts);
-router.post('/contracts',      requirePermission('contract.create'), validate(createContractSchema), ContractController.createContract);
-router.get('/contracts/:id',   requirePermission('contract.read'),   ContractController.getContractById);
-router.put('/contracts/:id',   requirePermission('contract.update'), validate(updateContractSchema), ContractController.updateContract);
-router.put('/contracts/:id/sign', requirePermission('contract.update'), validate(signContractSchema), ContractController.signContract);
-router.delete('/contracts/:id', requirePermission('contract.delete'), ContractController.deleteContract);
+router.get('/',       requirePermission('contract.read'),   ContractController.getContracts);
+router.post('/',      requirePermission('contract.create'), validate(createContractSchema), ContractController.createContract);
+router.get('/:id',   requirePermission('contract.read'),   ContractController.getContractById);
+router.put('/:id',   requirePermission('contract.update'), validate(updateContractSchema), ContractController.updateContract);
+router.put('/:id/sign', requirePermission('contract.update'), validate(signContractSchema), ContractController.signContract);
+router.delete('/:id', requirePermission('contract.delete'), ContractController.deleteContract);
 
 export default router;

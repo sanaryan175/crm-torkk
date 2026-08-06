@@ -8,8 +8,9 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/',            requirePermission('announcement.read'),   AppNotificationController.getNotifications);
-router.post('/mark-read',  requirePermission('announcement.update'), validate(markReadSchema), AppNotificationController.markRead);
-router.delete('/:id',      requirePermission('announcement.delete'), AppNotificationController.deleteNotification);
+// Use notification permissions instead of announcement permissions
+router.get('/',            requirePermission('notification.read'),   AppNotificationController.getNotifications);
+router.post('/mark-read',  requirePermission('notification.update'), validate(markReadSchema), AppNotificationController.markRead);
+router.delete('/:id',      requirePermission('notification.delete'), AppNotificationController.deleteNotification);
 
 export default router;

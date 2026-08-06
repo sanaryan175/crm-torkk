@@ -2,6 +2,7 @@
 
 import React, { ReactNode } from 'react';
 import { AuthProvider, UIProvider, FilterProvider, RegionProvider } from '@/lib/context';
+import { ThemeProvider } from '@/lib/theme-context';
 import RootLayoutClient from './root-layout';
 
 interface RootLayoutServerProps {
@@ -10,16 +11,18 @@ interface RootLayoutServerProps {
 
 export default function RootLayoutServer({ children }: RootLayoutServerProps) {
   return (
-    <AuthProvider>
-      <UIProvider>
-        <FilterProvider>
-          <RegionProvider>
-            <RootLayoutClient>
-              {children}
-            </RootLayoutClient>
-          </RegionProvider>
-        </FilterProvider>
-      </UIProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <UIProvider>
+          <FilterProvider>
+            <RegionProvider>
+              <RootLayoutClient>
+                {children}
+              </RootLayoutClient>
+            </RegionProvider>
+          </FilterProvider>
+        </UIProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

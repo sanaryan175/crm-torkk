@@ -270,7 +270,11 @@ export default function LeadsPage() {
 
   const handleConvert = async (data: { dealTitle: string; dealValue: number }) => {
     if (!convertRow) return;
-    await convertLead(convertRow.id, data);
+    await convertLead(convertRow.id, {
+      firstName: convertRow.firstName,
+      lastName: convertRow.lastName,
+      email: convertRow.email,
+    });
     addToast({ type: 'success', message: 'Lead converted to contact & deal.' });
     setConvertRow(null);
   };

@@ -38,6 +38,12 @@ export class NotFoundError extends ApiError {
   }
 }
 
+export class ConflictError extends ApiError {
+  constructor(message = 'Conflict') {
+    super(409, message);
+  }
+}
+
 export class InternalServerError extends ApiError {
   constructor(message = 'Internal Server Error') {
     super(500, message, false);

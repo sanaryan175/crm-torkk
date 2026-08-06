@@ -5,6 +5,14 @@ dotenv.config();
 // Force Node.js to UTC — all new Date() / date math uses UTC
 process.env.TZ = 'UTC';
 
+// Validate required environment variables
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingEnvVars.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
+
 import app from './app';
 
 const PORT = process.env.PORT || 5000;

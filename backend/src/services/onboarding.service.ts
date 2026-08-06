@@ -17,10 +17,16 @@ export class OnboardingService {
    * create account first, configure workspace second.
    */
   static async registerOwner(data: {
-    ownerName:     string;
-    ownerEmail:    string;
-    ownerPassword: string;
+    ownerName:       string;
+    ownerEmail:      string;
+    ownerPassword:   string;
+    confirmPassword?: string;
   }) {
+    // Validate password confirmation
+    if (data.confirmPassword && data.ownerPassword !== data.confirmPassword) {
+      throw new BadRequestError('Passwords do not match');
+    }
+
     const existingUser = await prisma.user.findFirst({
       where: { email: data.ownerEmail.toLowerCase() },
     });

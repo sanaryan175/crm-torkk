@@ -1,6 +1,7 @@
 import prisma from '../config/db';
 import { NotFoundError, BadRequestError } from '../utils/errors';
 import { AuditService } from './audit.service';
+import { NotificationHelper } from '../utils/notification.helper';
 
 interface AnnouncementData {
   title?: string;
@@ -44,6 +45,28 @@ export class AnnouncementService {
       },
     });
     await AuditService.created(organizationId, createdById, 'announcement', announcement.id, undefined, req);
+    
+    // Notify all users if published
+    if (published) {
+      const users = await prisma.user.findMany({
+        where: { organizationId },
+        select: { id: true },
+      });
+      if (users.length > 0) {
+        NotificationHelper.createMultiple(
+          organizationId,
+          users.map(u => u.id),
+          {
+            title: 'New Announcement',
+            body: data.title,
+            type: 'announcement',
+            relatedModel: 'Announcement',
+            relatedId: announcement.id,
+          }
+        ).catch(() => {});
+      }
+    }
+    
     return announcement;
   }
 
@@ -65,6 +88,28 @@ export class AnnouncementService {
       data: { ...data, publishedAt },
     });
     await AuditService.updated(organizationId, actorId, 'announcement', id, data, req);
+    
+    // Notify all users if status changed to published
+    if (data.status === 'published' && !current.publishedAt && updated.publishedAt) {
+      const users = await prisma.user.findMany({
+        where: { organizationId },
+        select: { id: true },
+      });
+      if (users.length > 0) {
+        NotificationHelper.createMultiple(
+          organizationId,
+          users.map(u => u.id),
+          {
+            title: 'New Announcement',
+            body: updated.title,
+            type: 'announcement',
+            relatedModel: 'Announcement',
+            relatedId: updated.id,
+          }
+        ).catch(() => {});
+      }
+    }
+    
     return updated;
   }
 

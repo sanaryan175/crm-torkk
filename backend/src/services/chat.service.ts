@@ -1,6 +1,7 @@
 import prisma from '../config/db';
 import { NotFoundError } from '../utils/errors';
 import { AuditService } from './audit.service';
+import { NotificationHelper } from '../utils/notification.helper';
 
 const USER_SELECT = { id: true, name: true, email: true, avatar: true } as const;
 
@@ -85,6 +86,22 @@ export class ChatService {
       include: MESSAGE_INCLUDE,
     });
     await AuditService.created(organizationId, senderId, 'chat_message', message.id, undefined, req);
+    
+    // Notify receiver of message
+    const sender = await prisma.user.findFirst({
+      where: { id: senderId, organizationId },
+      select: { name: true },
+    });
+    NotificationHelper.create({
+      organizationId,
+      userId: data.receiverId,
+      title: `New message from ${sender?.name || 'Someone'}`,
+      body: (data.content ?? data.message ?? '').substring(0, 100),
+      type: 'system',
+      relatedModel: 'ChatMessage',
+      relatedId: message.id,
+    }).catch(() => {});
+    
     return message;
   }
 

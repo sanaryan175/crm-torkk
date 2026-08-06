@@ -7,6 +7,7 @@ import { useAuth, useUI, useRegion } from '@/lib/context';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
 import FaqModal from './faq-modal';
+import { ThemeToggle } from '../ui/theme-toggle';
 
 interface TopNavProps {
   onMenuClick: () => void;
@@ -203,6 +204,9 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
         <button onClick={() => setFaqOpen(true)} className="p-2 hover:bg-accent/10 rounded-lg transition-colors">
           <HelpCircle className="w-5 h-5" />
         </button>
+
+        {/* Theme Toggle */}
+        <ThemeToggle />
 
         {/* Live Clock */}
         {user && (
