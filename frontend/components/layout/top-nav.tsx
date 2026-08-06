@@ -2,12 +2,13 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Menu, Bell, HelpCircle, LogOut, Settings2, ChevronDown, User, Target, Calendar } from 'lucide-react';
+import { Menu, Bell, HelpCircle, LogOut, Settings2, ChevronDown, User, Target, Calendar, Activity } from 'lucide-react';
 import { useAuth, useUI, useRegion } from '@/lib/context';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
 import FaqModal from './faq-modal';
 import { ThemeToggle } from '../ui/theme-toggle';
+import { useWebSocketNotifications } from '@/lib/hooks/useWebSocketNotifications';
 
 interface TopNavProps {
   onMenuClick: () => void;
@@ -20,6 +21,9 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
   const router           = useRouter();
   const [now, setNow] = useState<Date>(new Date());
 
+  // Use WebSocket for real-time notifications
+  const { notifications, isConnected, unreadCount, markAsRead, deleteNotification } = useWebSocketNotifications();
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
@@ -27,68 +31,7 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [unread, setUnread] = useState(0);
-  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const notifRef = useRef<HTMLDivElement>(null);
-
-  const storageKey = user ? `seen_notifications_${user.id}` : null;
-
-  // Load seen IDs from localStorage on mount
-  useEffect(() => {
-    if (storageKey) {
-      try {
-        const raw = localStorage.getItem(storageKey);
-        if (raw) setSeenIds(new Set(JSON.parse(raw)));
-      } catch { /* ignore */ }
-    }
-  }, [storageKey]);
-
-  const persistSeen = (ids: Set<string>) => {
-    if (storageKey) localStorage.setItem(storageKey, JSON.stringify([...ids]));
-  };
-
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const res = await apiFetch('/notifications');
-      setNotifications(res.notifications ?? []);
-      setUnread(res.unread ?? 0);
-    } catch {
-      // notifications are non-critical
-    }
-  }, []);
-
-  // Fetch immediately when user becomes available (after auth loads)
-  useEffect(() => {
-    if (user) fetchNotifications();
-  }, [user, fetchNotifications]);
-
-  // Poll for new notifications every 15s so the badge stays fresh
-  useEffect(() => {
-    const id = setInterval(fetchNotifications, 15_000);
-    return () => clearInterval(id);
-  }, [fetchNotifications]);
-
-  const displayUnread = notifications.filter((n) => !seenIds.has(n.id)).length;
-
-  const markSeen = (id: string) => {
-    setSeenIds((prev) => {
-      if (prev.has(id)) return prev;
-      const next = new Set(prev);
-      next.add(id);
-      persistSeen(next);
-      return next;
-    });
-  };
-
-  const markAllSeen = () => {
-    setSeenIds((prev) => {
-      const all = new Set(prev);
-      notifications.forEach((n) => all.add(n.id));
-      persistSeen(all);
-      return all;
-    });
-  };
 
   useEffect(() => {
     function onOutside(e: MouseEvent) {
@@ -139,64 +82,118 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
       </div>
 
       {/* Right */}
-      <div className="flex items-center gap-3">
-        <div className="relative" ref={notifRef}>
-          <button onClick={() => { setNotifOpen((o) => !o); if (!notifOpen) fetchNotifications(); }} className="p-2 hover:bg-accent/10 rounded-lg transition-colors relative">
-            <Bell className="w-5 h-5" />
-            {displayUnread > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground px-1 leading-none">
-                {displayUnread > 9 ? '9+' : displayUnread}
-              </span>
-            )}
-          </button>
+       <div className="flex items-center gap-3">
+         <div className="relative" ref={notifRef}>
+           <button onClick={() => setNotifOpen((o) => !o)} className="p-2 hover:bg-accent/10 rounded-lg transition-colors relative">
+             <Bell className="w-5 h-5" />
+             {/* WebSocket connection indicator */}
+             {isConnected && (
+               <span className="absolute top-1 left-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Real-time connected" />
+             )}
+             {unreadCount > 0 && (
+               <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground px-1 leading-none">
+                 {unreadCount > 9 ? '9+' : unreadCount}
+               </span>
+             )}
+           </button>
 
-          <AnimatePresence>
-            {notifOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                transition={{ duration: 0.12 }}
-                className="absolute top-full right-0 mt-2 w-80 max-w-[90vw] bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden"
-              >
-                <div className="px-4 py-3 border-b border-border bg-muted/20">
-                  <p className="text-sm font-semibold text-foreground">Notifications</p>
-                  <p className="text-xs text-muted-foreground">{displayUnread > 0 ? `${displayUnread} unread` : 'All caught up'}</p>
-                </div>
-                <div className="max-h-80 overflow-y-auto">
-                  {notifications.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                      <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                      No notifications yet
-                    </div>
-                  ) : (
-                    notifications.map((n: any) => (
-                      <button
-                        key={n.id}
-                        onClick={() => { markSeen(n.id); setNotifOpen(false); router.push(n.type === 'deal' ? '/deals' : '/activities'); }}
-                        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-accent/10 transition-colors border-b border-border/50 last:border-0"
+           <AnimatePresence>
+             {notifOpen && (
+               <motion.div
+                 initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                 animate={{ opacity: 1, y: 0, scale: 1 }}
+                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                 transition={{ duration: 0.12 }}
+                 className="absolute top-full right-0 mt-2 w-80 max-w-[90vw] bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+               >
+                 <div className="px-4 py-3 border-b border-border bg-muted/20">
+                   <div className="flex items-center justify-between">
+                     <div>
+                       <p className="text-sm font-semibold text-foreground">Notifications</p>
+                       <p className="text-xs text-muted-foreground">{unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}</p>
+                     </div>
+                     {isConnected && (
+                       <div className="flex items-center gap-1 text-xs text-green-600">
+                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                         Live
+                       </div>
+                     )}
+                   </div>
+                 </div>
+                 <div className="max-h-80 overflow-y-auto">
+                   {notifications.length === 0 ? (
+                     <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                       <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                       No notifications yet
+                     </div>
+                   ) : (
+                     notifications.map((n: any) => {
+                       const getIcon = () => {
+                         switch (n.type) {
+                           case 'deal':
+                             return <Target className="w-3.5 h-3.5" />;
+                           case 'announcement':
+                             return <Bell className="w-3.5 h-3.5" />;
+                           case 'approval':
+                             return <Activity className="w-3.5 h-3.5" />;
+                           default:
+                             return <Calendar className="w-3.5 h-3.5" />;
+                         }
+                       };
+
+                       const getColor = () => {
+                         switch (n.type) {
+                           case 'deal':
+                             return 'bg-primary/10 text-primary';
+                           case 'announcement':
+                             return 'bg-blue-500/10 text-blue-500';
+                           case 'approval':
+                             return 'bg-purple-500/10 text-purple-500';
+                           default:
+                             return 'bg-amber-500/10 text-amber-500';
+                         }
+                       };
+
+                       return (
+                         <div
+                           key={n.id}
+                           className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-accent/10 transition-colors border-b border-border/50 last:border-0 group"
+                         >
+                           <div className={`mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${getColor()}`}>
+                             {getIcon()}
+                           </div>
+                           <div className="flex-1 min-w-0">
+                             <p className="text-sm text-foreground truncate">{n.title}</p>
+                             {n.body && (
+                               <p className="text-xs text-muted-foreground mt-0.5 truncate">{n.body}</p>
+                             )}
+                           </div>
+                           <button
+                             onClick={() => deleteNotification(n.id)}
+                             className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 text-xs text-muted-foreground hover:text-foreground"
+                             title="Delete"
+                           >
+                             ✕
+                           </button>
+                         </div>
+                       );
+                     })
+                   )}
+                 </div>
+                  {unreadCount > 0 && (
+                    <div className="border-t border-border px-4 py-2.5 bg-muted/10">
+                      <button 
+                        onClick={async () => {
+                          for (const notif of notifications.slice(0, unreadCount)) {
+                            await markAsRead(notif.id);
+                          }
+                        }}
+                        className="w-full text-xs text-center text-primary hover:underline font-medium"
                       >
-                        <div className={`mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${n.type === 'deal' ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-500'}`}>
-                          {n.type === 'deal' ? <Target className="w-3.5 h-3.5" /> : <Calendar className="w-3.5 h-3.5" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground truncate">{n.title}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {n.type === 'deal' ? 'Deal' : 'Activity'}
-                            {n.contactName ? ` · ${n.contactName}` : ''}
-                          </p>
-                        </div>
+                        Mark all as read
                       </button>
-                    ))
+                    </div>
                   )}
-                </div>
-                {displayUnread > 0 && (
-                  <div className="border-t border-border px-4 py-2.5 bg-muted/10">
-                    <button onClick={markAllSeen} className="w-full text-xs text-center text-primary hover:underline font-medium">
-                      Mark all as read
-                    </button>
-                  </div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>

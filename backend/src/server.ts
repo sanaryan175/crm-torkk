@@ -13,13 +13,22 @@ if (missingEnvVars.length > 0) {
   process.exit(1);
 }
 
+import { createServer } from 'http';
 import app from './app';
+import { initializeWebSocket } from './config/websocket';
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
+// Create HTTP server (required for WebSocket)
+const httpServer = createServer(app);
+
+// Initialize WebSocket
+initializeWebSocket(httpServer);
+
+httpServer.listen(PORT, () => {
   console.log(`=================================`);
   console.log(`🚀 API Server running on port ${PORT}`);
+  console.log(`🔌 WebSocket enabled`);
   const brevoKey = process.env.BREVO_API_KEY;
   console.log(`📧 Email service: ${brevoKey ? 'configured' : 'MISSING API KEY'}`);
   console.log(`=================================`);
@@ -27,8 +36,8 @@ const server = app.listen(PORT, () => {
 
 process.on('SIGTERM', () => {
   console.log('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
+  httpServer.close(() => {
     console.log('HTTP server closed');
   });
 });
-export default server;
+export default httpServer;

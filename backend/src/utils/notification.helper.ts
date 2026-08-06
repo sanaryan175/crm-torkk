@@ -1,9 +1,11 @@
 /**
  * NotificationHelper - Utility for creating app notifications
  * Centralizes notification creation logic for consistency
+ * Also emits real-time WebSocket events
  */
 
 import prisma from '../config/db';
+import { notifyUser } from '../config/websocket';
 
 export interface CreateNotificationParams {
   organizationId: string;
@@ -19,6 +21,7 @@ export class NotificationHelper {
   /**
    * Create an app notification for a user
    * Usage: NotificationHelper.create({...})
+   * Also emits WebSocket event for real-time delivery
    */
   static async create(params: CreateNotificationParams) {
     try {
@@ -38,6 +41,23 @@ export class NotificationHelper {
       });
 
       console.log(`✅ [Notification] Created for user ${params.userId}: "${params.title}"`);
+
+      // Emit WebSocket event for real-time delivery
+      try {
+        notifyUser(params.userId, 'notification:new', {
+          id: notification.id,
+          title: notification.title,
+          body: notification.body,
+          type: notification.type,
+          relatedModel: notification.relatedModel,
+          relatedId: notification.relatedId,
+          createdAt: notification.createdAt,
+        });
+      } catch (wsError) {
+        console.warn(`⚠️ [WebSocket] Failed to emit notification:`, wsError);
+        // Don't fail if WebSocket fails - notification is still in database
+      }
+
       return notification;
     } catch (error) {
       console.error(`❌ [Notification] Failed to create:`, error);
@@ -48,6 +68,7 @@ export class NotificationHelper {
   /**
    * Create notifications for multiple users
    * Useful for team announcements, workflow notifications, etc.
+   * Batch creates and emits WebSocket events
    */
   static async createMultiple(
     organizationId: string,
