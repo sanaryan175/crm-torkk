@@ -1,16 +1,8 @@
 import prisma from '../config/db';
-import { PERMISSIONS, ROLE_DEFINITIONS } from '../rbac/permissions';
-
-const READ_PERMS = new Set([
-  PERMISSIONS.CONTACT_READ,
-  PERMISSIONS.DEAL_READ,
-  PERMISSIONS.ACTIVITY_READ,
-  PERMISSIONS.USER_READ,
-  PERMISSIONS.REPORTS_VIEW,
-]);
+import { ROLE_DEFINITIONS } from '../rbac/permissions';
 
 async function backfillPermissions() {
-  console.log('Backfilling read permissions for all roles in existing organizations...');
+  console.log('Backfilling permissions for all roles in existing organizations...');
 
   const orgs = await prisma.organization.findMany({ select: { id: true } });
   console.log(`Found ${orgs.length} organizations`);
@@ -26,8 +18,7 @@ async function backfillPermissions() {
       const def = definitionMap.get(role.name as typeof ROLE_DEFINITIONS[number]['name']);
       if (!def) continue;
 
-      const expectedReadPerms = def.permissions.filter((p): p is typeof p => READ_PERMS.has(p as any));
-      if (expectedReadPerms.length === 0) continue;
+      const expectedPerms = def.permissions;
 
       const existingPerms = await prisma.rolePermission.findMany({
         where: { roleId: role.id },
@@ -35,7 +26,7 @@ async function backfillPermissions() {
       });
       const existingNames = new Set(existingPerms.map((rp) => rp.permission.name));
 
-      for (const permName of expectedReadPerms) {
+      for (const permName of expectedPerms) {
         if (existingNames.has(permName)) continue;
 
         let perm = await prisma.permission.findFirst({
