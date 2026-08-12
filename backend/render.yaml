@@ -3,8 +3,9 @@ services:
     name: crm-backend
     runtime: node
     rootDir: .
-    buildCommand: npm install && npm run build && node node_modules/prisma/build/index.js generate
-    startCommand: node node_modules/prisma/build/index.js migrate deploy && node dist/server.js
+    buildCommand: npm install && npm run build && npx prisma generate
+    startCommand: npx prisma migrate deploy && node dist/server.js
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,10 +19,16 @@ services:
         generateValue: true
       - key: JWT_EXPIRE
         value: 24h
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: BREVO_SENDER_NAME
+        sync: false
       - key: FRONTEND_URL
-        sync: false          # you'll paste your Vercel URL here after deploying frontend
+        sync: false
       - key: CORS_ORIGIN
-        sync: false          # same as FRONTEND_URL
+        sync: false
 
 databases:
   - name: crm-db

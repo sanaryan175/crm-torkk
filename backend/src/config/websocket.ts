@@ -38,14 +38,14 @@ export function initializeWebSocket(httpServer: HTTPServer): SocketIOServer {
         return next(new Error('Authentication required'));
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
-      socket.userId = decoded.id;
-      socket.organizationId = decoded.organizationId;
+       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+       socket.userId = decoded.userId;
+       socket.organizationId = decoded.organizationId;
 
-      // Verify user still exists and is active
-      const user = await prisma.user.findFirst({
-        where: { id: decoded.id, organizationId: decoded.organizationId, isActive: true },
-      });
+       // Verify user still exists and is active
+       const user = await prisma.user.findFirst({
+         where: { id: decoded.userId, organizationId: decoded.organizationId, isActive: true },
+       });
 
       if (!user) {
         return next(new Error('User not found or inactive'));

@@ -3,6 +3,7 @@
 import React, { ReactNode } from 'react';
 import { AuthProvider, UIProvider, FilterProvider, RegionProvider } from '@/lib/context';
 import { ThemeProvider } from '@/lib/theme-context';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 import RootLayoutClient from './root-layout';
 
 interface RootLayoutServerProps {
@@ -11,18 +12,20 @@ interface RootLayoutServerProps {
 
 export default function RootLayoutServer({ children }: RootLayoutServerProps) {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <UIProvider>
-          <FilterProvider>
-            <RegionProvider>
-              <RootLayoutClient>
-                {children}
-              </RootLayoutClient>
-            </RegionProvider>
-          </FilterProvider>
-        </UIProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <UIProvider>
+            <FilterProvider>
+              <RegionProvider>
+                <RootLayoutClient>
+                  {children}
+                </RootLayoutClient>
+              </RegionProvider>
+            </FilterProvider>
+          </UIProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
