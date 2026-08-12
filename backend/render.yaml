@@ -2,7 +2,7 @@ services:
   - type: web
     name: crm-backend
     runtime: node
-    rootDir: backend
+    rootDir: ./backend
     buildCommand: npm install && npm run build && npx prisma generate
     startCommand: npx prisma migrate deploy && node dist/server.js
     healthCheckPath: /api/health
