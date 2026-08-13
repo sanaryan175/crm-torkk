@@ -2,8 +2,9 @@ services:
   - type: web
     name: crm-backend
     runtime: node
-    buildCommand: cd backend && yarn install && yarn build && yarn prisma:deploy
-    startCommand: cd backend && yarn start
+    rootDir: ./backend
+    buildCommand: yarn install && yarn build && yarn prisma:deploy
+    startCommand: yarn start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
